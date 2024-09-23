@@ -73,7 +73,7 @@ public final class SwitchHelper {
    */
   static boolean checkAssignmentsToDelete(@NotNull Statement parent,
                                           @NotNull List<TempVarAssignmentItem> items) {
-    Map<VarExprent, List<VarExprent>> collected = items.stream().map(t -> t.varExprent()).collect(Collectors.groupingBy(t -> t));
+    Map<VarExprent, List<VarExprent>> collected = items.stream().map(t -> t.varExprent).collect(Collectors.groupingBy(t -> t));
     return checkRecursivelyAssignmentsToDelete(parent, collected);
   }
 
@@ -82,27 +82,28 @@ public final class SwitchHelper {
     List<Exprent> exprents = statement.getExprents();
     if (exprents != null) {
       for (Exprent exprent : exprents) {
-        if (!(exprent instanceof AssignmentExprent assignmentExprent)) {
+        if (!(exprent instanceof AssignmentExprent)) {
           continue;
         }
+        AssignmentExprent assignmentExprent = (AssignmentExprent)exprent;
         Exprent right = assignmentExprent.getRight();
         Exprent left = assignmentExprent.getLeft();
         boolean containsLeft = containVar(collected, left);
-        if (right instanceof VarExprent varExprent) {
-          boolean containsRight = containVar(collected, varExprent);
+        if (right instanceof VarExprent) {
+          boolean containsRight = containVar(collected, (VarExprent)right);
           if (containsLeft || !containsRight) {
             continue;
           }
           return false;
         }
 
-        if (right instanceof FunctionExprent functionExprent &&
-            functionExprent.getFuncType() == FUNCTION_CAST &&
-            functionExprent.getLstOperands().size() == 2 &&
-            functionExprent.getLstOperands().get(1) instanceof ConstExprent) {
-          Exprent operand = functionExprent.getLstOperands().get(0);
-          if (operand instanceof VarExprent varExprent) {
-            boolean containsRight = containVar(collected, varExprent);
+        if (right instanceof FunctionExprent &&
+            ((FunctionExprent)right).getFuncType() == FUNCTION_CAST &&
+            ((FunctionExprent)right).getLstOperands().size() == 2 &&
+            ((FunctionExprent)right).getLstOperands().get(1) instanceof ConstExprent) {
+          Exprent operand = ((FunctionExprent)right).getLstOperands().get(0);
+          if (operand instanceof VarExprent) {
+            boolean containsRight = containVar(collected, (VarExprent)operand);
             if (containsLeft || !containsRight) {
               continue;
             }
@@ -123,18 +124,21 @@ public final class SwitchHelper {
                                         @NotNull List<SwitchRecognizer> recognizers,
                                         @NotNull List<SwitchOnCandidate> candidates,
                                         @NotNull Set<SwitchStatement> usedSwitchStatement) {
-    if (statement instanceof SwitchStatement switchStatement && !usedSwitchStatement.contains(switchStatement)) {
-      SwitchExprent switchExprent = (SwitchExprent)switchStatement.getHeadExprent();
-      Exprent switchSelector = Objects.requireNonNull(switchExprent).getValue();
-      if (switchSelector instanceof InvocationExprent) {
-        for (SwitchRecognizer recognizer : recognizers) {
-          SwitchOnCandidate switchCandidate = recognizer.recognize(switchStatement, (InvocationExprent)switchSelector);
-          if (switchCandidate == null) continue;
-          candidates.add(0, switchCandidate);
-          usedSwitchStatement.addAll(switchCandidate.usedSwitch());
-          break;
+    if (statement instanceof SwitchStatement) {
+        SwitchStatement switchStatement = (SwitchStatement)statement;
+        if (!usedSwitchStatement.contains(switchStatement)) {
+            SwitchExprent switchExprent = (SwitchExprent)switchStatement.getHeadExprent();
+            Exprent switchSelector = Objects.requireNonNull(switchExprent).getValue();
+            if (switchSelector instanceof InvocationExprent) {
+              for (SwitchRecognizer recognizer : recognizers) {
+                SwitchOnCandidate switchCandidate = recognizer.recognize(switchStatement, (InvocationExprent)switchSelector);
+                if (switchCandidate == null) continue;
+                candidates.add(0, switchCandidate);
+                usedSwitchStatement.addAll(switchCandidate.usedSwitch());
+                break;
+              }
+            }
         }
-      }
     }
     for (Statement child : statement.getStats()) {
       collectSwitchesOn(child, recognizers, candidates, usedSwitchStatement);
@@ -152,7 +156,8 @@ public final class SwitchHelper {
       MethodWrapper wrapper = classNode.getWrapper().getMethodWrapper(CLINIT_NAME, "()V");
       if (wrapper != null && wrapper.root != null) {
         wrapper.getOrBuildGraph().iterateExprents(exprent -> {
-          if (exprent instanceof AssignmentExprent assignment) {
+          if (exprent instanceof AssignmentExprent) {
+              AssignmentExprent assignment = (AssignmentExprent)exprent;
             Exprent left = assignment.getLeft();
             if (left.type == Exprent.EXPRENT_ARRAY && ((ArrayExprent)left).getArray().equals(arrayField)) {
               mapping.put(assignment.getRight(), ((InvocationExprent)((ArrayExprent)left).getIndex()).getInstance());
@@ -170,7 +175,8 @@ public final class SwitchHelper {
       MethodWrapper wrapper = classNode.getWrapper().getMethodWrapper(invocationExprent.getName(), "()[I");
       if (wrapper != null && wrapper.root != null) {
         wrapper.getOrBuildGraph().iterateExprents(exprent -> {
-          if (exprent instanceof AssignmentExprent assignment) {
+          if (exprent instanceof AssignmentExprent) {
+              AssignmentExprent assignment = (AssignmentExprent)exprent;
             Exprent left = assignment.getLeft();
             if (left.type == Exprent.EXPRENT_ARRAY) {
               Exprent indexExprent = ((ArrayExprent)left).getIndex();
@@ -223,9 +229,19 @@ public final class SwitchHelper {
     return isJavacEnumArray || isEclipseEnumArray;
   }
 
-  record TempVarAssignmentItem(@NotNull VarExprent varExprent,
-                               @NotNull Statement statement,
-                               boolean delete) {
+  static class TempVarAssignmentItem {
+      VarExprent varExprent;
+      Statement statement;
+      boolean delete;
+
+      TempVarAssignmentItem(@NotNull VarExprent varExprent,
+              @NotNull Statement statement,
+              boolean delete){
+          this.varExprent = varExprent;
+          this.statement = statement;
+          this.delete = delete;
+      }
+      
     TempVarAssignmentItem(@NotNull VarExprent varExprent, @NotNull Statement statement) {
       this(varExprent, statement, true);
     }
@@ -234,9 +250,9 @@ public final class SwitchHelper {
   static void removeTempVariableDeclarations(@NotNull List<TempVarAssignmentItem> tempVarAssignments) {
     if (tempVarAssignments.isEmpty()) return;
     Set<Statement> visited = new HashSet<>();
-    Set<Statement> statements = tempVarAssignments.stream().filter(a -> a.delete).map(a -> a.statement()).collect(Collectors.toSet());
+    Set<Statement> statements = tempVarAssignments.stream().filter(a -> a.delete).map(a -> a.statement).collect(Collectors.toSet());
     Map<VarExprent, List<VarExprent>> vars =
-      tempVarAssignments.stream().filter(a -> a.delete).map(a -> a.varExprent()).collect(Collectors.groupingBy(t -> t));
+      tempVarAssignments.stream().filter(a -> a.delete).map(a -> a.varExprent).collect(Collectors.groupingBy(t -> t));
     Set<VarExprent> preserve = tempVarAssignments.stream().filter(a->!a.delete).map(t->t.varExprent).collect(Collectors.toSet());
     for (Statement statement : statements) {
       Statement parent = statement;
@@ -309,7 +325,8 @@ public final class SwitchHelper {
     if (!cl.hasEnhancedSwitchSupport()) {
       return;
     }
-    if (statement instanceof SwitchStatement switchStatement) {
+    if (statement instanceof SwitchStatement) {
+        SwitchStatement switchStatement = (SwitchStatement)statement;
       if (canBeRules(switchStatement)) {
         switchStatement.setCanBeRule(true);
         prepareForRules(switchStatement);
@@ -622,8 +639,8 @@ public final class SwitchHelper {
         }
 
         List<Exprent> newExprents;
-        if (newSelector.lastExprentIndex() > 0) {
-          newExprents = List.copyOf(firstSwitchExprents.subList(0, newSelector.lastExprentIndex()));
+        if (newSelector.lastExprentIndex > 0) {
+          newExprents = new ArrayList<>(firstSwitchExprents.subList(0, newSelector.lastExprentIndex));
         }
         else {
           newExprents = Collections.emptyList();
@@ -644,12 +661,15 @@ public final class SwitchHelper {
         if (exprents != null) {
           exprents.addAll(0, newExprents);
         }
-        secondSwitchSelector.replaceExprent(((SwitchExprent)secondSwitchSelector).getValue(), newSelector.newSelector());
+        secondSwitchSelector.replaceExprent(((SwitchExprent)secondSwitchSelector).getValue(), newSelector.newSelector);
       }
 
       @Override
       public Set<SwitchStatement> usedSwitch() {
-        return Set.of(firstSwitch, secondSwitch);
+          Set<SwitchStatement> res = new HashSet<>(2);
+          res.add(firstSwitch);
+          res.add(secondSwitch);
+          return res;
       }
 
       @NotNull
@@ -679,7 +699,13 @@ public final class SwitchHelper {
         return tempVarAssignments;
       }
 
-      private record NewSelector(int lastExprentIndex, Exprent newSelector) {
+      private static class NewSelector {
+          int lastExprentIndex;
+          Exprent newSelector;
+          NewSelector(int lastExprentIndex, Exprent newSelector) {
+              this.lastExprentIndex = lastExprentIndex;
+              this.newSelector = newSelector;
+          }
       }
     }
 
@@ -728,7 +754,7 @@ public final class SwitchHelper {
 
       @Override
       public Set<SwitchStatement> usedSwitch() {
-        return Set.of(switchStatement);
+        return Collections.singleton(switchStatement);
       }
 
       @Override

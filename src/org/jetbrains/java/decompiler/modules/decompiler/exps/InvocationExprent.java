@@ -72,16 +72,16 @@ public class InvocationExprent extends Exprent {
     className = cn.className;
     this.bootstrapArguments = bootstrapArguments;
     switch (opcode) {
-      case CodeConstants.opc_invokestatic -> invocationType = INVOKE_STATIC;
-      case CodeConstants.opc_invokespecial -> invocationType = INVOKE_SPECIAL;
-      case CodeConstants.opc_invokevirtual -> invocationType = INVOKE_VIRTUAL;
-      case CodeConstants.opc_invokeinterface -> invocationType = INVOKE_INTERFACE;
-      case CodeConstants.opc_invokedynamic -> {
+      case CodeConstants.opc_invokestatic: invocationType = INVOKE_STATIC;break;
+      case CodeConstants.opc_invokespecial: invocationType = INVOKE_SPECIAL;break;
+      case CodeConstants.opc_invokevirtual: invocationType = INVOKE_VIRTUAL;break;
+      case CodeConstants.opc_invokeinterface: invocationType = INVOKE_INTERFACE;break;
+      case CodeConstants.opc_invokedynamic:
         invocationType = INVOKE_DYNAMIC;
 
         className = "java/lang/Class"; // dummy class name
         invokeDynamicClassSuffix = "##Lambda_" + cn.index1 + "_" + cn.index2;
-      }
+        break;
     }
 
     if (CodeConstants.INIT_NAME.equals(name)) {
@@ -289,7 +289,7 @@ public class InvocationExprent extends Exprent {
     }
 
     switch (funcType) {
-      case TYPE_GENERAL -> {
+      case TYPE_GENERAL:
         if (VarExprent.VAR_NAMELESS_ENCLOSURE.equals(buf.toString())) {
           buf = new TextBuffer();
         }
@@ -303,9 +303,9 @@ public class InvocationExprent extends Exprent {
           buf.append("<invokedynamic>");
         }
         buf.append("(");
-      }
-      case TYPE_CLINIT -> throw new RuntimeException("Explicit invocation of " + CodeConstants.CLINIT_NAME);
-      case TYPE_INIT -> {
+      break;
+      case TYPE_CLINIT: throw new RuntimeException("Explicit invocation of " + CodeConstants.CLINIT_NAME);
+      case TYPE_INIT:
         if (super_qualifier != null) {
           buf.append("super(");
         }
@@ -318,7 +318,7 @@ public class InvocationExprent extends Exprent {
         else {
           throw new RuntimeException("Unrecognized invocation of " + CodeConstants.INIT_NAME);
         }
-      }
+        break;
     }
 
     List<VarVersionPair> mask = null;
@@ -429,29 +429,30 @@ public class InvocationExprent extends Exprent {
 
   // TODO: move to CodeConstants ???
   private static String getClassNameForPrimitiveType(int type) {
-    return switch (type) {
-      case CodeConstants.TYPE_BOOLEAN -> "java/lang/Boolean";
-      case CodeConstants.TYPE_BYTE, CodeConstants.TYPE_BYTECHAR -> "java/lang/Byte";
-      case CodeConstants.TYPE_CHAR -> "java/lang/Character";
-      case CodeConstants.TYPE_SHORT, CodeConstants.TYPE_SHORTCHAR -> "java/lang/Short";
-      case CodeConstants.TYPE_INT -> "java/lang/Integer";
-      case CodeConstants.TYPE_LONG -> "java/lang/Long";
-      case CodeConstants.TYPE_FLOAT -> "java/lang/Float";
-      case CodeConstants.TYPE_DOUBLE -> "java/lang/Double";
-      default -> null;
-    };
+    switch (type) {
+      case CodeConstants.TYPE_BOOLEAN: return "java/lang/Boolean";
+      case CodeConstants.TYPE_BYTE: case CodeConstants.TYPE_BYTECHAR: return "java/lang/Byte";
+      case CodeConstants.TYPE_CHAR: return "java/lang/Character";
+      case CodeConstants.TYPE_SHORT:case CodeConstants.TYPE_SHORTCHAR: return "java/lang/Short";
+      case CodeConstants.TYPE_INT: return "java/lang/Integer";
+      case CodeConstants.TYPE_LONG: return "java/lang/Long";
+      case CodeConstants.TYPE_FLOAT: return "java/lang/Float";
+      case CodeConstants.TYPE_DOUBLE: return "java/lang/Double";
+      default: return null;
+    }
   }
 
-  private static final Map<String, String> UNBOXING_METHODS = Map.of(
-    "booleanValue", "java/lang/Boolean",
-    "byteValue", "java/lang/Byte",
-    "shortValue", "java/lang/Short",
-    "intValue", "java/lang/Integer",
-    "longValue", "java/lang/Long",
-    "floatValue", "java/lang/Float",
-    "doubleValue", "java/lang/Double",
-    "charValue", "java/lang/Character"
-  );
+  private static final Map<String, String> UNBOXING_METHODS = new HashMap<>();
+  static {
+      UNBOXING_METHODS.put("booleanValue", "java/lang/Boolean");
+      UNBOXING_METHODS.put("byteValue", "java/lang/Byte");
+      UNBOXING_METHODS.put("shortValue", "java/lang/Short");
+      UNBOXING_METHODS.put("intValue", "java/lang/Integer");
+      UNBOXING_METHODS.put("longValue", "java/lang/Long");
+      UNBOXING_METHODS.put("floatValue", "java/lang/Float");
+      UNBOXING_METHODS.put("doubleValue", "java/lang/Double");
+      UNBOXING_METHODS.put("charValue", "java/lang/Character");
+  }
 
   private boolean isUnboxingCall() {
     return !isStatic && parameters.isEmpty() && className.equals(UNBOXING_METHODS.get(name));
@@ -525,8 +526,8 @@ public class InvocationExprent extends Exprent {
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
-    if (!(o instanceof InvocationExprent it)) return false;
-
+    if (!(o instanceof InvocationExprent)) return false;
+    InvocationExprent it = (InvocationExprent) o;
     return Objects.equals(name, it.name) &&
            Objects.equals(className, it.className) &&
            isStatic == it.isStatic &&

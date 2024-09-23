@@ -120,13 +120,13 @@ public class GenericType implements Type {
     loop:
     while (index < value.length()) {
       switch (value.charAt(index)) {
-        case '<' -> counter++;
-        case '>' -> counter--;
-        case '.' -> {
+        case '<': counter++;break;
+        case '>': counter--;break;
+        case '.':
           if (counter == 0) {
             break loop;
           }
-        }
+          break;
       }
 
       index++;
@@ -143,12 +143,14 @@ public class GenericType implements Type {
     while (value.length() > 0) {
       String typeStr = getNextType(value);
       int len = typeStr.length();
-      int wildcard = switch (typeStr.charAt(0)) {
-        case '*' -> WILDCARD_UNBOUND;
-        case '+' -> WILDCARD_EXTENDS;
-        case '-' -> WILDCARD_SUPER;
-        default -> WILDCARD_NO;
-      };
+      int wildcard = WILDCARD_NO;
+      if (typeStr.charAt(0) == '*') {
+          wildcard = WILDCARD_UNBOUND;
+      } else if (typeStr.charAt(0) == '+') {
+          wildcard = WILDCARD_EXTENDS;
+      } else if (typeStr.charAt(0) == '-') {
+          wildcard = WILDCARD_SUPER;
+      }
 
       type.getWildcards().add(wildcard);
 

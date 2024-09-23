@@ -59,11 +59,11 @@ public final class IfStatement extends Statement {
     List<StatEdge> lstHeadSuccs = head.getSuccessorEdges(EdgeType.DIRECT_ALL);
 
     switch (regedges) {
-      case 0 -> {
+      case 0:
         ifstat = null;
         elsestat = null;
-      }
-      case 1 -> {
+        break;
+      case 1:
         ifstat = null;
         elsestat = null;
 
@@ -75,8 +75,8 @@ public final class IfStatement extends Statement {
           post = edgeif.getDestination();
           negated = true;
         }
-      }
-      case 2 -> {
+        break;
+      case 2:
         elsestat = lstHeadSuccs.get(0).getDestination();
         ifstat = lstHeadSuccs.get(1).getDestination();
 
@@ -118,7 +118,7 @@ public final class IfStatement extends Statement {
         if (elsestat == null) {
           regedges = 1;  // if without else
         }
-      }
+        break;
     }
 
     ifedge = lstHeadSuccs.get(negated ? 0 : 1);

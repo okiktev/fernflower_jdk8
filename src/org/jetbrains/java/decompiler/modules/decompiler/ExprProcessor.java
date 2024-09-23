@@ -41,11 +41,12 @@ public class ExprProcessor {
   public static final String UNKNOWN_TYPE_STRING = "<unknown>";
   public static final String NULL_TYPE_STRING = "<null>";
 
-  private static final Map<Integer, Integer> functionMap = Map.of(
-    CodeConstants.opc_arraylength, FunctionExprent.FUNCTION_ARRAY_LENGTH,
-    CodeConstants.opc_checkcast, FunctionExprent.FUNCTION_CAST,
-    CodeConstants.opc_instanceof, FunctionExprent.FUNCTION_INSTANCEOF
-  );
+  private static final Map<Integer, Integer> functionMap = new HashMap<>();
+  static {
+      functionMap.put(CodeConstants.opc_arraylength, FunctionExprent.FUNCTION_ARRAY_LENGTH);
+      functionMap.put(CodeConstants.opc_checkcast, FunctionExprent.FUNCTION_CAST);
+      functionMap.put(CodeConstants.opc_instanceof, FunctionExprent.FUNCTION_INSTANCEOF);
+  }
 
   private static final VarType[] constants = {
     VarType.VARTYPE_INT, VarType.VARTYPE_FLOAT, VarType.VARTYPE_LONG, VarType.VARTYPE_DOUBLE, VarType.VARTYPE_CLASS, VarType.VARTYPE_STRING
@@ -271,7 +272,7 @@ public class ExprProcessor {
     for (int i = 0; i < seq.length(); i++) {
       Instruction instr = seq.getInstr(i);
       Integer offset = block.getOriginalOffset(i);
-      Set<Integer> offsets = offset >= 0 ? Set.of(offset) : null;
+      Set<Integer> offsets = offset >= 0 ? Collections.singleton(offset) : null;
 
       switch (instr.opcode) {
         case CodeConstants.opc_aconst_null:
@@ -597,11 +598,11 @@ public class ExprProcessor {
   private static int nextMeaningfulOffset(BasicBlock block, int index) {
     InstructionSequence seq = block.getSeq();
     while (++index < seq.length()) {
-      switch (seq.getInstr(index).opcode) {
-        case CodeConstants.opc_nop, CodeConstants.opc_istore, CodeConstants.opc_lstore, CodeConstants.opc_fstore, CodeConstants.opc_dstore, CodeConstants.opc_astore -> {
-          continue;
+        int opcode = seq.getInstr(index).opcode;
+        if (opcode == CodeConstants.opc_nop || opcode == CodeConstants.opc_istore || opcode == CodeConstants.opc_lstore 
+                || opcode == CodeConstants.opc_fstore || opcode == CodeConstants.opc_dstore || opcode == CodeConstants.opc_astore) {
+            continue;
         }
-      }
       return block.getOriginalOffset(index);
     }
 
@@ -765,7 +766,7 @@ public class ExprProcessor {
     ClassesProcessor.ClassNode enclosingClass = (ClassesProcessor.ClassNode) DecompilerContext.getProperty(
       DecompilerContext.CURRENT_CLASS_NODE
     );
-    List<ClassesProcessor.ClassNode> enclosingClassList = new ArrayList<>(List.of(enclosingClass));
+    List<ClassesProcessor.ClassNode> enclosingClassList = new ArrayList<>(Collections.singleton(enclosingClass));
     while (enclosingClass.parent != null) {
       enclosingClass = enclosingClass.parent;
       enclosingClassList.add(0, enclosingClass);
@@ -1050,14 +1051,12 @@ public class ExprProcessor {
 
   private static boolean isIntConstant(Exprent exprent) {
     if (exprent.type == Exprent.EXPRENT_CONST) {
-      switch (((ConstExprent)exprent).getConstType().getType()) {
-        case CodeConstants.TYPE_BYTE, CodeConstants.TYPE_BYTECHAR, CodeConstants.TYPE_SHORT,
-          CodeConstants.TYPE_SHORTCHAR, CodeConstants.TYPE_INT -> {
+      int type = ((ConstExprent)exprent).getConstType().getType();
+      if (type == CodeConstants.TYPE_BYTE || type == CodeConstants.TYPE_BYTECHAR || type == CodeConstants.TYPE_SHORT
+              || type == CodeConstants.TYPE_SHORTCHAR || type == CodeConstants.TYPE_INT) {
           return true;
-        }
       }
     }
-
     return false;
   }
 

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 public final class SecondaryFunctionsHelper {
 
@@ -30,14 +31,15 @@ public final class SecondaryFunctionsHelper {
     FunctionExprent.FUNCTION_CADD
   };
 
-  private static final Map<Integer, Integer[]> mapNumComparisons = Map.of(
-    FunctionExprent.FUNCTION_EQ, new Integer[]{FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_EQ, FunctionExprent.FUNCTION_GT},
-    FunctionExprent.FUNCTION_NE, new Integer[]{FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_NE, FunctionExprent.FUNCTION_LE},
-    FunctionExprent.FUNCTION_GT, new Integer[]{FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_GT, null},
-    FunctionExprent.FUNCTION_GE, new Integer[]{null, FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_GT},
-    FunctionExprent.FUNCTION_LT, new Integer[]{null, FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_LE},
-    FunctionExprent.FUNCTION_LE, new Integer[]{FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_LE, null}
-  );
+  private static final Map<Integer, Integer[]> mapNumComparisons = new HashMap<>();
+  static {
+      mapNumComparisons.put(FunctionExprent.FUNCTION_EQ, new Integer[]{FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_EQ, FunctionExprent.FUNCTION_GT});
+      mapNumComparisons.put(FunctionExprent.FUNCTION_NE, new Integer[]{FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_NE, FunctionExprent.FUNCTION_LE});
+      mapNumComparisons.put(FunctionExprent.FUNCTION_GT, new Integer[]{FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_GT, null});
+      mapNumComparisons.put(FunctionExprent.FUNCTION_GE, new Integer[]{null, FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_GT});
+      mapNumComparisons.put(FunctionExprent.FUNCTION_LT, new Integer[]{null, FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_LE});
+      mapNumComparisons.put(FunctionExprent.FUNCTION_LE, new Integer[]{FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_LE, null});
+  }
 
   public static boolean identifySecondaryFunctions(Statement stat, VarProcessor varProc) {
     if (stat.getExprents() == null) {
@@ -121,16 +123,16 @@ public final class SecondaryFunctionsHelper {
       FunctionExprent fexpr = (FunctionExprent)exprent;
 
       switch (fexpr.getFuncType()) {
-        case FunctionExprent.FUNCTION_BOOL_NOT -> {
+        case FunctionExprent.FUNCTION_BOOL_NOT:
 
           Exprent retparam = propagateBoolNot(fexpr);
 
           if (retparam != null) {
             return retparam;
           }
-        }
-        case FunctionExprent.FUNCTION_EQ, FunctionExprent.FUNCTION_NE, FunctionExprent.FUNCTION_GT,
-          FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_LE -> {
+          break;
+        case FunctionExprent.FUNCTION_EQ:case FunctionExprent.FUNCTION_NE:case FunctionExprent.FUNCTION_GT:
+        case FunctionExprent.FUNCTION_GE:case FunctionExprent.FUNCTION_LT:case FunctionExprent.FUNCTION_LE:
           Exprent expr1 = fexpr.getLstOperands().get(0);
           Exprent expr2 = fexpr.getLstOperands().get(1);
 
@@ -177,7 +179,7 @@ public final class SecondaryFunctionsHelper {
               }
             }
           }
-        }
+          break;
       }
     }
 
@@ -197,12 +199,12 @@ public final class SecondaryFunctionsHelper {
     }
 
     switch (exprent.type) {
-      case Exprent.EXPRENT_FUNCTION -> {
+      case Exprent.EXPRENT_FUNCTION:
         FunctionExprent fexpr = (FunctionExprent)exprent;
         List<Exprent> lstOperands = fexpr.getLstOperands();
 
         switch (fexpr.getFuncType()) {
-          case FunctionExprent.FUNCTION_XOR -> {
+          case FunctionExprent.FUNCTION_XOR:
             for (int i = 0; i < 2; i++) {
               Exprent operand = lstOperands.get(i);
               VarType operandtype = operand.getExprType();
@@ -225,8 +227,8 @@ public final class SecondaryFunctionsHelper {
                 }
               }
             }
-          }
-          case FunctionExprent.FUNCTION_EQ, FunctionExprent.FUNCTION_NE -> {
+            break;
+          case FunctionExprent.FUNCTION_EQ: case FunctionExprent.FUNCTION_NE:
             if (lstOperands.get(0).getExprType().getType() == CodeConstants.TYPE_BOOLEAN &&
                 lstOperands.get(1).getExprType().getType() == CodeConstants.TYPE_BOOLEAN) {
               for (int i = 0; i < 2; i++) {
@@ -246,8 +248,8 @@ public final class SecondaryFunctionsHelper {
                 }
               }
             }
-          }
-          case FunctionExprent.FUNCTION_BOOL_NOT -> {
+            break;
+          case FunctionExprent.FUNCTION_BOOL_NOT:
             if (lstOperands.get(0).type == Exprent.EXPRENT_CONST) {
               int val = ((ConstExprent)lstOperands.get(0)).getIntValue();
               if (val == 0) {
@@ -257,8 +259,8 @@ public final class SecondaryFunctionsHelper {
                 return new ConstExprent(VarType.VARTYPE_BOOLEAN, 0, fexpr.bytecode);
               }
             }
-          }
-          case FunctionExprent.FUNCTION_IIF -> {
+            break;
+          case FunctionExprent.FUNCTION_IIF:
             Exprent expr1 = lstOperands.get(1);
             Exprent expr2 = lstOperands.get(2);
 
@@ -277,8 +279,8 @@ public final class SecondaryFunctionsHelper {
                 }
               }
             }
-          }
-          case FunctionExprent.FUNCTION_LCMP, FunctionExprent.FUNCTION_FCMPL, FunctionExprent.FUNCTION_FCMPG, FunctionExprent.FUNCTION_DCMPL, FunctionExprent.FUNCTION_DCMPG -> {
+            break;
+          case FunctionExprent.FUNCTION_LCMP:case FunctionExprent.FUNCTION_FCMPL:case FunctionExprent.FUNCTION_FCMPG:case FunctionExprent.FUNCTION_DCMPL:case FunctionExprent.FUNCTION_DCMPG:
             int var = DecompilerContext.getCounterContainer().getCounterAndIncrement(CounterContainer.VAR_COUNTER);
             VarType type = lstOperands.get(0).getExprType();
 
@@ -299,10 +301,9 @@ public final class SecondaryFunctionsHelper {
 
             return new FunctionExprent(FunctionExprent.FUNCTION_IIF, Arrays.asList(
               head, new ConstExprent(VarType.VARTYPE_INT, 0, null), iff), fexpr.bytecode);
-          }
         }
-      }
-      case Exprent.EXPRENT_ASSIGNMENT -> { // check for conditional assignment
+        break;
+      case Exprent.EXPRENT_ASSIGNMENT: // check for conditional assignment
         AssignmentExprent asexpr = (AssignmentExprent)exprent;
         Exprent right = asexpr.getRight();
         Exprent left = asexpr.getLeft();
@@ -353,15 +354,15 @@ public final class SecondaryFunctionsHelper {
             asexpr.setCondType(func.getFuncType());
           }
         }
-      }
-      case Exprent.EXPRENT_INVOCATION -> {
+      break;
+      case Exprent.EXPRENT_INVOCATION:
         if (!statement_level) { // simplify if exprent is a real expression. The opposite case is pretty absurd, can still happen however (and happened at least once).
           Exprent retexpr = ConcatenationHelper.contractStringConcat(exprent);
           if (!exprent.equals(retexpr)) {
             return retexpr;
           }
         }
-      }
+      break;
     }
 
     return null;
@@ -380,13 +381,13 @@ public final class SecondaryFunctionsHelper {
 
           int ftype = fparam.getFuncType();
           boolean canSimplify = false;
+          List<Exprent> operands = fparam.getLstOperands();
           switch (ftype) {
             case FunctionExprent.FUNCTION_BOOL_NOT:
               Exprent newexpr = fparam.getLstOperands().get(0);
               Exprent retexpr = propagateBoolNot(newexpr);
               return retexpr == null ? newexpr : retexpr;
-            case FunctionExprent.FUNCTION_CADD, FunctionExprent.FUNCTION_COR: {
-              List<Exprent> operands = fparam.getLstOperands();
+            case FunctionExprent.FUNCTION_CADD:case FunctionExprent.FUNCTION_COR: {
               for (int i = 0; i < operands.size(); i++) {
                 Exprent newparam = new FunctionExprent(FunctionExprent.FUNCTION_BOOL_NOT, operands.get(i), operands.get(i).bytecode);
 
@@ -394,11 +395,10 @@ public final class SecondaryFunctionsHelper {
                 operands.set(i, retparam == null ? newparam : retparam);
               }
             }
-            case FunctionExprent.FUNCTION_EQ, FunctionExprent.FUNCTION_NE:
+            case FunctionExprent.FUNCTION_EQ:case FunctionExprent.FUNCTION_NE:
               canSimplify = true;
-            case FunctionExprent.FUNCTION_LT, FunctionExprent.FUNCTION_GE, FunctionExprent.FUNCTION_GT, FunctionExprent.FUNCTION_LE:
+            case FunctionExprent.FUNCTION_LT:case FunctionExprent.FUNCTION_GE:case FunctionExprent.FUNCTION_GT:case FunctionExprent.FUNCTION_LE:
               if (!canSimplify) {
-                List<Exprent> operands = fparam.getLstOperands();
                 VarType left = operands.get(0).getExprType();
                 VarType right = operands.get(1).getExprType();
                 VarType commonSupertype = VarType.getCommonSupertype(left, right);

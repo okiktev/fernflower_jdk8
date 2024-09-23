@@ -60,7 +60,7 @@ public abstract class StructMember {
     Set<AnnotationExprent> typeAnnotations = TargetInfo.EmptyTarget.extract(getPossibleTypeAnnotationCollisions(type))
       .stream()
       .map(typeAnnotation-> typeAnnotation.getAnnotationExpr())
-      .collect(Collectors.toUnmodifiableSet());
+      .collect(Collectors.toSet());
     return typeAnnotations.contains(typeAnnotationExpr);
   }
 
@@ -71,7 +71,7 @@ public abstract class StructMember {
     Set<AnnotationExprent> typeAnnotations = TargetInfo.FormalParameterTarget
       .extract(getPossibleTypeAnnotationCollisions(type), param).stream()
       .map(typeAnnotation-> typeAnnotation.getAnnotationExpr())
-      .collect(Collectors.toUnmodifiableSet());
+      .collect(Collectors.toSet());
     return typeAnnotations.contains(typeAnnotationExpr);
   }
 

@@ -179,28 +179,7 @@ public class VarVersionsProcessor {
                              VarType.getCommonMinType(firstMaxType, secondMaxType);
 
               if (firstType.getTypeFamily() == CodeConstants.TYPE_FAMILY_INTEGER && secondType.getTypeFamily() == CodeConstants.TYPE_FAMILY_INTEGER) {
-                type = switch (secondType.getType()) {
-                  case CodeConstants.TYPE_INT -> VarType.VARTYPE_INT;
-                  case CodeConstants.TYPE_SHORT -> firstType.getType() == CodeConstants.TYPE_INT ? null : VarType.VARTYPE_SHORT;
-                  case CodeConstants.TYPE_CHAR -> switch (firstType.getType()) {
-                    case CodeConstants.TYPE_INT, CodeConstants.TYPE_SHORT -> null;
-                    default -> VarType.VARTYPE_CHAR;
-                  };
-                  case CodeConstants.TYPE_SHORTCHAR -> switch (firstType.getType()) {
-                    case CodeConstants.TYPE_INT, CodeConstants.TYPE_SHORT, CodeConstants.TYPE_CHAR -> null;
-                    default -> VarType.VARTYPE_SHORTCHAR;
-                  };
-                  case CodeConstants.TYPE_BYTECHAR -> switch (firstType.getType()) {
-                    case CodeConstants.TYPE_INT, CodeConstants.TYPE_SHORT, CodeConstants.TYPE_CHAR, CodeConstants.TYPE_SHORTCHAR -> null;
-                    default -> VarType.VARTYPE_BYTECHAR;
-                  };
-                  case CodeConstants.TYPE_BYTE -> switch (firstType.getType()) {
-                    case CodeConstants.TYPE_INT, CodeConstants.TYPE_SHORT, CodeConstants.TYPE_CHAR, CodeConstants.TYPE_SHORTCHAR, CodeConstants.TYPE_BYTECHAR ->
-                      null;
-                    default -> VarType.VARTYPE_BYTE;
-                  };
-                  default -> type;
-                };
+                type = getType(firstType, secondType, type);
                 if (type == null) {
                   continue;
                 }
@@ -232,6 +211,31 @@ public class VarVersionsProcessor {
     if (!mapMergedVersions.isEmpty()) {
       updateVersions(graph, mapMergedVersions);
     }
+  }
+
+  private static VarType getType(VarType firstType, VarType secondType, VarType type) {
+      switch (secondType.getType()) {
+          case CodeConstants.TYPE_INT:return VarType.VARTYPE_INT;
+          case CodeConstants.TYPE_SHORT:return firstType.getType() == CodeConstants.TYPE_INT ? null : VarType.VARTYPE_SHORT;
+          case CodeConstants.TYPE_CHAR:
+              switch (firstType.getType()) {
+                  case CodeConstants.TYPE_INT:case CodeConstants.TYPE_SHORT:return null;
+                  default:return VarType.VARTYPE_CHAR;
+              }
+          case CodeConstants.TYPE_SHORTCHAR: switch (firstType.getType()) {
+                  case CodeConstants.TYPE_INT:case CodeConstants.TYPE_SHORT:case CodeConstants.TYPE_CHAR: return null;
+                  default:return VarType.VARTYPE_SHORTCHAR;
+              }
+          case CodeConstants.TYPE_BYTECHAR: switch (firstType.getType()) {
+              case CodeConstants.TYPE_INT:case CodeConstants.TYPE_SHORT:case CodeConstants.TYPE_CHAR:case CodeConstants.TYPE_SHORTCHAR: return null;
+              default: return VarType.VARTYPE_BYTECHAR;
+              }
+          case CodeConstants.TYPE_BYTE: switch (firstType.getType()) {
+              case CodeConstants.TYPE_INT:case CodeConstants.TYPE_SHORT:case CodeConstants.TYPE_CHAR:case CodeConstants.TYPE_SHORTCHAR:case CodeConstants.TYPE_BYTECHAR: return null;
+              default: return VarType.VARTYPE_BYTE;
+          }
+          default: return type;
+      }
   }
 
   private void setNewVarIndices(VarTypeProcessor typeProcessor, DirectGraph graph, VarVersionsProcessor previousVersionsProcessor) {

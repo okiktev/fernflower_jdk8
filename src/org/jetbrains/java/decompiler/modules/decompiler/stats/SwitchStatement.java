@@ -185,7 +185,7 @@ public final class SwitchStatement extends Statement {
         else {
           buf.appendIndent(indent + 1).append("case ");
           Exprent value = values.get(j);
-          if (value instanceof ConstExprent constExprent && !constExprent.isNull()) {
+          if (value instanceof ConstExprent && !((ConstExprent)value).isNull()) {
             value = value.copy();
             if (switchType.getType() != TYPE_OBJECT) {
               ((ConstExprent)value).setConstType(switchType);
@@ -219,17 +219,17 @@ public final class SwitchStatement extends Statement {
       }
       //example:
       //case 0: break
-      if (canBeRule && stat instanceof BasicBlockStatement blockStatement && blockStatement.getBlock().getSeq().isEmpty() &&
+      if (canBeRule && stat instanceof BasicBlockStatement && ((BasicBlockStatement)stat).getBlock().getSeq().isEmpty() &&
           (stat.getExprents() == null || stat.getExprents().isEmpty())) {
         buf.append("{ }").appendLineSeparator();
         tracer.incrementCurrentSourceLine();
       }
       else {
-        if (canBeRule && stat instanceof BasicBlockStatement blockStatement && blockStatement.getExprents() != null &&
-            (blockStatement.getExprents().size() > 1 ||
-             (blockStatement.getExprents().size() == 1 &&
-              blockStatement.getExprents().get(0) instanceof ExitExprent exitExprent &&
-              exitExprent.getExitType() == ExitExprent.EXIT_RETURN))) {
+        if (canBeRule && stat instanceof BasicBlockStatement && ((BasicBlockStatement)stat).getExprents() != null &&
+            (((BasicBlockStatement)stat).getExprents().size() > 1 ||
+            (((BasicBlockStatement)stat).getExprents().size() == 1 &&
+            ((BasicBlockStatement)stat).getExprents().get(0) instanceof ExitExprent &&
+            ((ExitExprent)((BasicBlockStatement)stat).getExprents().get(0)).getExitType() == ExitExprent.EXIT_RETURN))) {
           TextBuffer buffer = ExprProcessor.jmpWrapper(stat, indent + 2, false, tracer);
           buf.append("{").appendLineSeparator();
           tracer.incrementCurrentSourceLine();

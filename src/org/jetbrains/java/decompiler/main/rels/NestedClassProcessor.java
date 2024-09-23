@@ -781,11 +781,13 @@ public class NestedClassProcessor {
         stack.clear();
 
         switch (st.type) {
-          case SEQUENCE -> stack.addAll(0, st.getStats());
-          case IF, ROOT, SWITCH, SYNCHRONIZED -> stack.add(st.getFirst());
-          default -> {
+          case SEQUENCE: stack.addAll(0, st.getStats());break;
+          case IF:
+          case ROOT:
+          case SWITCH:
+          case SYNCHRONIZED: stack.add(st.getFirst());break;
+          default:
             return st;
-          }
         }
       }
     }
@@ -801,8 +803,8 @@ public class NestedClassProcessor {
       int counter = 0;
 
       for (Object obj : stat.getSequentialObjects()) {
-        if (obj instanceof Statement st) {
-
+        if (obj instanceof Statement) {
+            Statement st = (Statement) obj;
           Statement stTemp = getDefStatement(st, classType, setStats);
 
           if (stTemp != null) {
@@ -856,18 +858,18 @@ public class NestedClassProcessor {
       boolean res = false;
 
       switch (expr.type) {
-        case Exprent.EXPRENT_CONST -> {
+        case Exprent.EXPRENT_CONST:
           ConstExprent constExpr = (ConstExprent)expr;
           res = (VarType.VARTYPE_CLASS.equals(constExpr.getConstType()) && classname.equals(constExpr.getValue()) ||
                  classType.equals(constExpr.getConstType()));
-        }
-        case Exprent.EXPRENT_FIELD -> res = classname.equals(((FieldExprent)expr).getClassname());
-        case Exprent.EXPRENT_INVOCATION -> res = classname.equals(((InvocationExprent)expr).getClassName());
-        case Exprent.EXPRENT_NEW -> {
+        break;
+        case Exprent.EXPRENT_FIELD: res = classname.equals(((FieldExprent)expr).getClassname());break;
+        case Exprent.EXPRENT_INVOCATION: res = classname.equals(((InvocationExprent)expr).getClassName());break;
+        case Exprent.EXPRENT_NEW:
           VarType newType = expr.getExprType();
           res = newType.getType() == CodeConstants.TYPE_OBJECT && classname.equals(newType.getValue());
-        }
-        case Exprent.EXPRENT_VAR -> {
+          break;
+        case Exprent.EXPRENT_VAR:
           VarExprent varExpr = (VarExprent)expr;
           if (varExpr.isDefinition()) {
             VarType varType = varExpr.getVarType();
@@ -875,7 +877,7 @@ public class NestedClassProcessor {
               res = true;
             }
           }
-        }
+          break;
       }
 
       if (res) {
@@ -898,8 +900,9 @@ public class NestedClassProcessor {
     @Override
     public boolean equals(Object o) {
       if (o == this) return true;
-      if (!(o instanceof VarFieldPair pair)) return false;
+      if (!(o instanceof VarFieldPair)) return false;
 
+      VarFieldPair pair = (VarFieldPair) o;
       return fieldKey.equals(pair.fieldKey) && varPair.equals(pair.varPair);
     }
 

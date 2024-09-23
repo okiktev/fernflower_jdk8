@@ -80,7 +80,7 @@ public class ContextUnit {
 
   public void save() {
     switch (type) {
-      case TYPE_FOLDER -> {
+      case TYPE_FOLDER:
         // create folder
         resultSaver.saveFolder(filename);
 
@@ -107,8 +107,8 @@ public class ContextUnit {
             }
           }
         }
-      }
-      case TYPE_JAR, TYPE_ZIP -> {
+      break;
+      case TYPE_JAR:case TYPE_ZIP:
         // create archive file
         resultSaver.saveFolder(archivePath);
         resultSaver.createArchive(archivePath, filename, manifest);
@@ -136,7 +136,7 @@ public class ContextUnit {
         }
 
         resultSaver.closeArchive(archivePath, filename);
-      }
+      break;
     }
   }
 

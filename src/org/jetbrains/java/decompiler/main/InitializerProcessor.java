@@ -13,11 +13,12 @@ import org.jetbrains.java.decompiler.modules.decompiler.stats.Statements;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
 import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.StructField;
+import org.jetbrains.java.decompiler.struct.StructRecordComponent;
 import org.jetbrains.java.decompiler.util.InterpreterUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -171,11 +172,15 @@ public final class InitializerProcessor {
       return;
     }
 
-    Set<String> recordComponents = Optional.ofNullable(cl.getRecordComponents())
-      .stream()
-      .flatMap(l -> l.stream())
-      .map(c -> InterpreterUtil.makeUniqueKey(c.getName(), c.getDescriptor()))
-      .collect(Collectors.toSet());
+    List<StructRecordComponent> recordComponentsList = cl.getRecordComponents();
+    Set<String> recordComponents;
+    if (recordComponentsList == null) {
+        recordComponents = Collections.emptySet();
+    } else {
+        recordComponents = recordComponentsList.stream()
+            .map(c -> InterpreterUtil.makeUniqueKey(c.getName(), c.getDescriptor()))
+            .collect(Collectors.toSet());
+    }
 
     while (true) {
       String fieldWithDescr = null;
@@ -242,7 +247,7 @@ public final class InitializerProcessor {
 
     for (Exprent expr : lst) {
       switch (expr.type) {
-        case Exprent.EXPRENT_VAR -> {
+        case Exprent.EXPRENT_VAR:
           VarVersionPair varPair = new VarVersionPair((VarExprent)expr);
           if (!method.varproc.getExternalVars().contains(varPair)) {
             String varName = method.varproc.getVarName(varPair);
@@ -250,10 +255,9 @@ public final class InitializerProcessor {
               return false;
             }
           }
-        }
-        case Exprent.EXPRENT_FIELD -> {
+        break;
+        case Exprent.EXPRENT_FIELD:
           return false;
-        }
       }
     }
 

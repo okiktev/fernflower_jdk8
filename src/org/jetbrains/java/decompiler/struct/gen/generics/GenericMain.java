@@ -110,13 +110,13 @@ public final class GenericMain {
     loop:
     while (index < signature.length()) {
       switch (signature.charAt(index)) {
-        case '<' -> counter++;
-        case '>' -> {
+        case '<': counter++;break;
+        case '>':
           counter--;
           if (counter == 0) {
             break loop;
           }
-        }
+        break;
       }
 
       index++;
@@ -238,9 +238,9 @@ public final class GenericMain {
         typeAnnWriteHelpers.removeAll(locTypeAnnWriteHelpers);
         locTypeAnnWriteHelpers = writeTypeAnnotationBeforeWildCard(sb, genPar, wildcard, locTypeAnnWriteHelpers);
         switch (wildcard) {
-          case GenericType.WILDCARD_UNBOUND -> sb.append('?');
-          case GenericType.WILDCARD_EXTENDS -> sb.append("? extends ");
-          case GenericType.WILDCARD_SUPER -> sb.append("? super ");
+          case GenericType.WILDCARD_UNBOUND: sb.append('?');break;
+          case GenericType.WILDCARD_EXTENDS: sb.append("? extends ");break;
+          case GenericType.WILDCARD_SUPER: sb.append("? super ");break;
         }
         locTypeAnnWriteHelpers = writeTypeAnnotationAfterWildCard(sb, genPar, locTypeAnnWriteHelpers);
         if (genPar != null) {

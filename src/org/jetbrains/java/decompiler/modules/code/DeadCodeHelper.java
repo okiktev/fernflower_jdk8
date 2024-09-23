@@ -377,6 +377,28 @@ public final class DeadCodeHelper {
     }
     return index;
   }
+  
+  private static final Set<Integer> codeConstants = new HashSet<>();
+  static {
+      codeConstants.add(CodeConstants.opc_iload);
+      codeConstants.add(CodeConstants.opc_lload);
+      codeConstants.add(CodeConstants.opc_fload);
+      codeConstants.add(CodeConstants.opc_dload);
+      codeConstants.add(CodeConstants.opc_aload);
+      codeConstants.add(CodeConstants.opc_aconst_null);
+      codeConstants.add(CodeConstants.opc_bipush);
+      codeConstants.add(CodeConstants.opc_sipush);
+      codeConstants.add(CodeConstants.opc_lconst_0);
+      codeConstants.add(CodeConstants.opc_lconst_1);
+      codeConstants.add(CodeConstants.opc_fconst_0);
+      codeConstants.add(CodeConstants.opc_fconst_1);
+      codeConstants.add(CodeConstants.opc_fconst_2);
+      codeConstants.add(CodeConstants.opc_dconst_0);
+      codeConstants.add(CodeConstants.opc_dconst_1);
+      codeConstants.add(CodeConstants.opc_ldc);
+      codeConstants.add(CodeConstants.opc_ldc_w);
+      codeConstants.add(CodeConstants.opc_ldc2_w);
+  }
 
   public static void incorporateValueReturns(ControlFlowGraph graph) {
     for (BasicBlock block : graph.getBlocks()) {
@@ -391,14 +413,7 @@ public final class DeadCodeHelper {
             ok = true;
           }
           else if (seq.getLastInstr().opcode != CodeConstants.opc_return) {
-            ok = switch (seq.getInstr(0).opcode) {
-              case CodeConstants.opc_iload, CodeConstants.opc_lload, CodeConstants.opc_fload, CodeConstants.opc_dload,
-                CodeConstants.opc_aload, CodeConstants.opc_aconst_null, CodeConstants.opc_bipush, CodeConstants.opc_sipush,
-                CodeConstants.opc_lconst_0, CodeConstants.opc_lconst_1, CodeConstants.opc_fconst_0, CodeConstants.opc_fconst_1,
-                CodeConstants.opc_fconst_2, CodeConstants.opc_dconst_0, CodeConstants.opc_dconst_1, CodeConstants.opc_ldc,
-                CodeConstants.opc_ldc_w, CodeConstants.opc_ldc2_w -> true;
-              default -> false;
-            };
+            ok = codeConstants.contains(seq.getInstr(0).opcode);
           }
         }
 

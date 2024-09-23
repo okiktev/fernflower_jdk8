@@ -96,7 +96,7 @@ public class FlattenStatementsHelper {
       if (statEntry.succEdges == null) {
 
         switch (stat.type) {
-          case BASIC_BLOCK -> {
+          case BASIC_BLOCK:
             node = new DirectNode(DirectNodeType.DIRECT, stat, (BasicBlockStatement)stat);
             if (stat.getExprents() != null) {
               node.exprents = stat.getExprents();
@@ -124,8 +124,8 @@ public class FlattenStatementsHelper {
             if (stat.getLastBasicType() == StatementType.IF) {
               mapPosIfBranch.put(sourcenode.id, lstSuccEdges.get(0).getDestination().id);
             }
-          }
-          case CATCH_ALL, TRY_CATCH -> {
+          break;
+          case CATCH_ALL:case TRY_CATCH:
             DirectNode firstnd = new DirectNode(DirectNodeType.TRY, stat, stat.id + "_try");
 
             mapDestinationNodes.put(stat.id, new String[]{firstnd.id, null});
@@ -152,8 +152,8 @@ public class FlattenStatementsHelper {
             }
 
             lstStackStatements.addAll(0, lst);
-          }
-          case DO -> {
+            break;
+          case DO:
             if (statementBreakIndex == 0) {
               statEntry.statementIndex = 1;
               lstStackStatements.addFirst(statEntry);
@@ -175,7 +175,7 @@ public class FlattenStatementsHelper {
             lstSuccEdges.add(stat.getSuccessorEdges(EdgeType.DIRECT_ALL).get(0));  // exactly one edge
 
             switch (loopType) {
-              case WHILE, DO_WHILE -> {
+              case WHILE:case DO_WHILE:
                 node = new DirectNode(DirectNodeType.CONDITION, stat, stat.id + "_cond");
                 node.exprents = dostat.getConditionExprentList();
                 graph.nodes.putWithKey(node, node.id);
@@ -200,8 +200,8 @@ public class FlattenStatementsHelper {
                   }
                 }
                 sourcenode = node;
-              }
-              case FOR -> {
+              break;
+              case FOR:
                 DirectNode nodeinit = new DirectNode(DirectNodeType.INIT, stat, stat.id + "_init");
                 if (dostat.getInitExprent() != null) {
                   nodeinit.exprents = dostat.getInitExprentList();
@@ -235,22 +235,25 @@ public class FlattenStatementsHelper {
                 }
 
                 sourcenode = nodecond;
-              }
+                break;
             }
-          }
-          case SYNCHRONIZED, SWITCH, IF, SEQUENCE, ROOT -> {
+            break;
+          case SYNCHRONIZED:case SWITCH:case IF:case SEQUENCE:case ROOT:
             int statsize = stat.getStats().size();
             if (stat.type == StatementType.SYNCHRONIZED) {
               statsize = 2;  // exclude the handler if synchronized
             }
 
             if (statementBreakIndex <= statsize) {
-              List<Exprent> tailexprlst = switch (stat.type) {
-                case SYNCHRONIZED -> ((SynchronizedStatement)stat).getHeadexprentList();
-                case SWITCH -> ((SwitchStatement)stat).getHeadExprentList();
-                case IF -> ((IfStatement)stat).getHeadexprentList();
-                default -> null;
-              };
+                List<Exprent> tailexprlst = null;
+                
+                if (stat.type == StatementType.SYNCHRONIZED) {
+                    tailexprlst = ((SynchronizedStatement)stat).getHeadexprentList();
+                } else if (stat.type == StatementType.SWITCH) {
+                    tailexprlst = ((SwitchStatement)stat).getHeadExprentList();
+                } else if (stat.type == StatementType.IF) {
+                    tailexprlst = ((IfStatement)stat).getHeadexprentList();
+                }
 
               for (int i = statementBreakIndex; i < statsize; i++) {
                 statEntry.statementIndex = i + 1;
@@ -270,7 +273,7 @@ public class FlattenStatementsHelper {
                 sourcenode = tailexprlst.get(0) == null ? node : graph.nodes.getWithKey(node.id + "_tail");
               }
             }
-          }
+            break;
         }
       }
 
@@ -479,8 +482,8 @@ public class FlattenStatementsHelper {
     @Override
     public boolean equals(Object o) {
       if (o == this) return true;
-      if (!(o instanceof FinallyPathWrapper fpw)) return false;
-
+      if (!(o instanceof FinallyPathWrapper)) return false;
+      FinallyPathWrapper fpw = (FinallyPathWrapper)o;
       return (source + ":" + destination + ":" + entry).equals(fpw.source + ":" + fpw.destination + ":" + fpw.entry);
     }
 

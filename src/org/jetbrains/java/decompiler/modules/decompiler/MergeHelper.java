@@ -43,8 +43,7 @@ public final class MergeHelper {
     LoopType oldLoop = stat.getLoopType();
 
     switch (oldLoop) {
-      case DO -> {
-
+      case DO:
         // identify a while loop
         if (matchWhile(stat)) {
           // identify a for loop - subtype of while
@@ -54,8 +53,8 @@ public final class MergeHelper {
           // identify a do{}while loop
           matchDoWhile(stat);
         }
-      }
-      case WHILE -> matchFor(stat);
+      break;
+      case WHILE: matchFor(stat);break;
     }
 
     return (stat.getLoopType() != oldLoop);

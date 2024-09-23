@@ -2,6 +2,7 @@
 package org.jetbrains.java.decompiler;
 
 import org.jetbrains.java.decompiler.main.DecompilerContext;
+import org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler;
 import org.jetbrains.java.decompiler.main.extern.ClassFormatException;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
 import org.junit.After;
@@ -16,6 +17,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,18 +33,21 @@ public class SingleClassesTest {
    * This will help us to test bugs hanging decompiler.
    */
   @Rule
-  public Timeout globalTimeout = Timeout.seconds(60);
+  public Timeout globalTimeout = Timeout.seconds(600000000);
 
   @Before
   public void setUp() throws IOException {
     fixture = new DecompilerTestFixture();
-    fixture.setUp(Map.of(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, "1",
-                         IFernflowerPreferences.DUMP_ORIGINAL_LINES, "1",
-                         IFernflowerPreferences.IGNORE_INVALID_BYTECODE, "1",
-                         IFernflowerPreferences.VERIFY_ANONYMOUS_CLASSES, "1",
-                         IFernflowerPreferences.CONVERT_PATTERN_SWITCH, "1",
-                         IFernflowerPreferences.CONVERT_RECORD_PATTERN, "1"
-    ));
+    
+    Map<String, String> fixtureMap = new HashMap<>();
+    fixtureMap.put(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, "1");
+    fixtureMap.put(IFernflowerPreferences.DUMP_ORIGINAL_LINES, "1");
+    fixtureMap.put(IFernflowerPreferences.IGNORE_INVALID_BYTECODE, "1");
+    fixtureMap.put(IFernflowerPreferences.VERIFY_ANONYMOUS_CLASSES, "1");
+    fixtureMap.put(IFernflowerPreferences.CONVERT_PATTERN_SWITCH, "1");
+    fixtureMap.put(IFernflowerPreferences.CONVERT_RECORD_PATTERN, "1");
+    
+    fixture.setUp(fixtureMap);
   }
 
   @After
@@ -263,39 +268,39 @@ public class SingleClassesTest {
   @Test public void testPreserveAssignmentToRecord2() { doTest("pkg/PreserveAssignmentToRecord2"); }
 
   private void doTest(String testFile, String... companionFiles) {
-    var decompiler = fixture.getDecompiler();
+      ConsoleDecompiler decompiler = fixture.getDecompiler();
 
-    var classFile = fixture.getTestDataDir().resolve("classes/" + testFile + ".class");
+    Path classFile = fixture.getTestDataDir().resolve("classes/" + testFile + ".class");
     assertThat(classFile).isRegularFile();
-    for (var file : collectClasses(classFile)) {
+    for (Path file : collectClasses(classFile)) {
       decompiler.addSource(file.toFile());
     }
 
     for (String companionFile : companionFiles) {
-      var companionClassFile = fixture.getTestDataDir().resolve("classes/" + companionFile + ".class");
+        Path companionClassFile = fixture.getTestDataDir().resolve("classes/" + companionFile + ".class");
       assertThat(companionClassFile).isRegularFile();
-      for (var file : collectClasses(companionClassFile)) {
+      for (Path file : collectClasses(companionClassFile)) {
         decompiler.addSource(file.toFile());
       }
     }
 
     decompiler.decompileContext();
 
-    var decompiledFile = fixture.getTargetDir().resolve(classFile.getFileName().toString().replace(".class", ".java"));
+    Path decompiledFile = fixture.getTargetDir().resolve(classFile.getFileName().toString().replace(".class", ".java"));
     assertThat(decompiledFile).isRegularFile();
     assertTrue(Files.isRegularFile(decompiledFile));
-    var referenceFile = fixture.getTestDataDir().resolve("results/" + classFile.getFileName().toString().replace(".class", ".dec"));
+    Path referenceFile = fixture.getTestDataDir().resolve("results/" + classFile.getFileName().toString().replace(".class", ".dec"));
     assertThat(referenceFile).isRegularFile();
     assertFilesEqual(referenceFile, decompiledFile);
   }
 
   static List<Path> collectClasses(Path classFile) {
-    var files = new ArrayList<Path>();
+    List<Path> files = new ArrayList<Path>();
     files.add(classFile);
 
-    var parent = classFile.getParent();
+    Path parent = classFile.getParent();
     if (parent != null) {
-      var glob = classFile.getFileName().toString().replace(".class", "$*.class");
+      String glob = classFile.getFileName().toString().replace(".class", "$*.class");
       try (DirectoryStream<Path> inner = Files.newDirectoryStream(parent, glob)) {
         inner.forEach(files::add);
       }

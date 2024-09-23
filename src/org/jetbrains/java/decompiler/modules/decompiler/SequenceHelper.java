@@ -270,10 +270,14 @@ public final class SequenceHelper {
       return stat;
     }
 
-    return switch (stat.type) {
-      case IF, SEQUENCE, SWITCH, SYNCHRONIZED -> getFirstExprentlist(stat.getFirst());
-      default -> null;
-    };
+    switch (stat.type) {
+      case IF:
+      case SEQUENCE:
+      case SWITCH:
+      case SYNCHRONIZED:
+          return getFirstExprentlist(stat.getFirst());
+      default: return null;
+    }
   }
 
 

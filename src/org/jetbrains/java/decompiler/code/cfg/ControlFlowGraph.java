@@ -306,12 +306,12 @@ public class ControlFlowGraph {
       BasicBlock bTemp;
 
       switch (instr.group) {
-        case CodeConstants.GROUP_JUMP -> {
+        case CodeConstants.GROUP_JUMP:
           int dest = ((JumpInstruction)instr).destination;
           bTemp = mapInstrBlocks.get(dest);
           block.addSuccessor(bTemp);
-        }
-        case CodeConstants.GROUP_SWITCH -> {
+          break;
+        case CodeConstants.GROUP_SWITCH:
           SwitchInstruction sinstr = (SwitchInstruction)instr;
           int[] dests = sinstr.getDestinations();
 
@@ -321,7 +321,7 @@ public class ControlFlowGraph {
             bTemp = mapInstrBlocks.get(dest1);
             block.addSuccessor(bTemp);
           }
-        }
+          break;
       }
 
       if (fallthrough && i < lstbb.size() - 1) {
@@ -391,8 +391,8 @@ public class ControlFlowGraph {
           setVisited.add(node);
 
           switch (node.getSeq().getLastInstr().opcode) {
-            case CodeConstants.opc_jsr -> jsrstack.add(node);
-            case CodeConstants.opc_ret -> {
+            case CodeConstants.opc_jsr: jsrstack.add(node);break;
+            case CodeConstants.opc_ret:
               BasicBlock enter = jsrstack.getLast();
               BasicBlock exit = blocks.getWithKey(enter.id + 1); // FIXME: find successor in a better way
 
@@ -406,7 +406,7 @@ public class ControlFlowGraph {
               else {
                 throw new RuntimeException("ERROR: last instruction jsr");
               }
-            }
+            break;
           }
 
           if (!jsrstack.isEmpty()) {
@@ -683,16 +683,18 @@ public class ControlFlowGraph {
       InstructionImpact.stepTypes(data, instr, pool);
 
       switch (instr.opcode) {
-        case CodeConstants.opc_jsr, CodeConstants.opc_ret -> {
+        case CodeConstants.opc_jsr:
+        case CodeConstants.opc_ret:
           seq.removeInstruction(i);
           i--;
-        }
-        case CodeConstants.opc_astore, CodeConstants.opc_pop -> {
+          break;
+        case CodeConstants.opc_astore:
+        case CodeConstants.opc_pop:
           if (var.getType() == CodeConstants.TYPE_ADDRESS) {
             seq.removeInstruction(i);
             i--;
           }
-        }
+        break;
       }
     }
 
